@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Visualization & Calculator</title>
+  <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+  <script src="stock_data.js"></script>
+  <script src="stock_calculator.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    select, button, input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: white;
+      cursor: pointer;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      font-weight: bold;
+      border: none;
+      transition: background 0.3s ease-in-out;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .hidden {
+      display: none;
+    }
+    .calculator {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 10px;
+      background: #fff;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Stock Visualization & Projection</h1>
+
+  <div class="container">
+    <label for="modeSelect"><b>Select Mode:</b></label>
+    <select id="modeSelect">
+      <option value="graph">📊 Stock Visualization</option>
+      <option value="calculator">📉 Stock Projection Calculator</option>
+    </select>
+  </div>
+
+  <!-- Graph Mode -->
+  <div id="graphContainer" class="container">
+    <div id="filters">
+      <label for="stockSelect"><b>Select Stock:</b></label>
+      <select id="stockSelect"></select>
+
+      <label for="yearSelect"><b>Select Year:</b></label>
+      <select id="yearSelect"></select>
+    </div>
+
+    <label for="chartSelect"><b>Select Chart Type:</b></label>
+    <select id="chartSelect">
+      <option value="regression">📉 Regression Graph</option>
+      <option value="candlestick">🕯️ Candlestick Chart</option>
+      <option value="pie">🥧 Pie Chart</option>
+      <option value="treemap">🌳 Treemap by Year</option>
+    </select>
+
+    <button id="showGraphButton">Show Visualization</button>
+    <!-- Plot container for regression, candlestick, and pie charts -->
+    <div id="plot"></div>
+    <!-- Additional containers for treemap and its summary -->
+    <div id="treemap"></div>
+    <div id="summary"></div>
+  </div>
+
+  <!-- Calculator Mode -->
+  <div id="calculatorContainer" class="hidden container">
+    <div class="calculator">
+      <h2>📉 Stock Value Calculator</h2>
+      <label for="amount"><b>Investment Amount ($):</b></label>
+      <input type="number" id="amount" placeholder="Enter investment amount">
+
+      <label for="calcStock"><b>Select Stock:</b></label>
+      <select id="calcStock"></select>
+
+      <label for="startDate"><b>Start Date:</b></label>
+      <select id="startDate"></select>
+
+      <label for="endDate"><b>End Date:</b></label>
+      <select id="endDate"></select>
+
+      <button id="calculateButton">Calculate Value</button>
+      <h3 id="result"></h3>
+    </div>
+  </div>
+
+  <!-- Load External JavaScript -->
+  <script src="plot_graph.js" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log("Checking stockData:", stockData);
+      if (!stockData || Object.keys(stockData).length === 0) {
+        console.error("Stock data not found. Ensure stock_data.js is loaded correctly.");
+        return;
+      }
+      populateStockDropdown();
+    });
+
+    document.getElementById("modeSelect").addEventListener("change", function () {
+      let mode = this.value;
+      document.getElementById("graphContainer").classList.toggle("hidden", mode !== "graph");
+      document.getElementById("calculatorContainer").classList.toggle("hidden", mode !== "calculator");
+    });
+
+    // Updated calculate button code to search records across all years for the selected stock
+    document.getElementById("calculateButton").addEventListener("click", function () {
+      let investmentAmount = parseFloat(document.getElementById("amount").value);
+      let selectedStock = document.getElementById("calcStock").value;
+      let startDate = document.getElementById("startDate").value;
+      let endDate = document.getElementById("endDate").value;
+      let resultElem = document.getElementById("result");
+
+      if (!investmentAmount || investmentAmount <= 0) {
+        alert("Please enter a valid investment amount.");
+        return;
+      }
+
+      let startRecord = null;
+      let endRecord = null;
+
+      // Iterate over each year’s data for the selected stock to find the matching dates
+      Object.keys(stockData[selectedStock]).forEach(year => {
+        stockData[selectedStock][year].forEach(record => {
+          if (record.Date === startDate) {
+            startRecord = record;
+          }
+          if (record.Date === endDate) {
+            endRecord = record;
+          }
+        });
+      });
+
+      if (!startRecord || !endRecord) {
+        alert("Stock prices for the selected dates are not available.");
+        return;
+      }
+
+      const shares = investmentAmount / startRecord.Close;
+      const finalValue = shares * endRecord.Close;
+      resultElem.innerText = `Investing $${investmentAmount.toFixed(2)} in ${selectedStock} on ${startDate} at $${startRecord.Close.toFixed(2)} per share would be worth $${finalValue.toFixed(2)} on ${endDate} (shares bought: ${shares.toFixed(4)}).`;
+    });
+  </script>
+</body>
+</html>

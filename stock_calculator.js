@@ -1,11 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Checking stockData:", stockData);
-
-    if (!window.stockData || Object.keys(stockData).length === 0) {
+    if (typeof stockData === "undefined" || Object.keys(stockData).length === 0) {
         console.error("Stock data not found. Ensure stock_data.js is loaded correctly.");
         return;
     }
-
     populateStockDropdown();
 });
 
